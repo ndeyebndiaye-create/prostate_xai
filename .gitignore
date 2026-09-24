@@ -1,0 +1,19 @@
+# Secrets / machine-specific config — never commit
+.env
+
+# Never commit data
+*.mha
+*.dcm
+*.nii
+*.nii.gz
+*.csv
+!requirements.txt
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+
+# Docker volumes are managed by Docker itself, not git
