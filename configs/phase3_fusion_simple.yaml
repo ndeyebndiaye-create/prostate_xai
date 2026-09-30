@@ -1,0 +1,16 @@
+# Phase 3 — Fusion simple (T2W + ADC + HBV empilés comme 3 canaux)
+#
+# Usage :
+#   python -m src.training.train_fusion_baseline --config configs/phase3_fusion_simple.yaml
+#
+# Note : `modalities` est une liste YAML, ce qui correspond au nargs="+" argparse.
+
+modalities:
+  - t2w
+  - adc
+  - hbv
+n_folds: 5
+batch_size: 8
+n_epochs: 30
+class_weight_pos: 2.5
+seed: 42

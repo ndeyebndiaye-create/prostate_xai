@@ -1,0 +1,17 @@
+# Phase 1 — Baseline unimodale T2W (séquence pondérée en T2)
+#
+# Usage :
+#   python -m src.training.train_unimodal_baseline --config configs/phase1_t2w.yaml
+#
+# Toutes les valeurs ici sont des defaults : un argument CLI explicite les écrase.
+# Ex : --n_epochs 50 lancera 50 epochs même si ce fichier dit 30.
+#
+# Ne jamais commiter de modifications locales de ce fichier sans réfléchir :
+# ce fichier versionné = la définition officielle de l'expérience Phase 1 T2W.
+
+modality: t2w
+n_folds: 5
+batch_size: 8
+n_epochs: 30
+class_weight_pos: 2.5
+seed: 42

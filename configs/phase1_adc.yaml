@@ -1,0 +1,11 @@
+# Phase 1 — Baseline unimodale ADC (Apparent Diffusion Coefficient)
+#
+# Usage :
+#   python -m src.training.train_unimodal_baseline --config configs/phase1_adc.yaml
+
+modality: adc
+n_folds: 5
+batch_size: 8
+n_epochs: 30
+class_weight_pos: 2.5
+seed: 42

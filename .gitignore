@@ -16,4 +16,11 @@ __pycache__/
 *.egg-info/
 .venv/
 
+# Checkpoints (potentiellement plusieurs centaines de MB — ne pas versionner)
+# Pour partager un checkpoint précis, uploader manuellement sur Drive et noter
+# le lien dans CHANGELOG.md.
+checkpoints/
+*.pt
+*.pth
+
 # Docker volumes are managed by Docker itself, not git
