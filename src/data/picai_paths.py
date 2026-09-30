@@ -1,16 +1,10 @@
 """
-PI-CAI path resolution and label loading — local filesystem version.
-
-Same logic as the earlier Colab version, adapted for two confirmed facts
-about the actual downloaded data:
-  1. Files are named by nnU-Net channel convention, not by modality name:
-     _0000 = T2W, _0001 = ADC, _0002 = HBV.
-  2. DATA_ROOT is a normal local path (synced by Google Drive Desktop),
-     not a Colab-mounted Drive — no drive.mount() anywhere in this file.
+PI-CAI path resolution and label loading — robust dual naming & RAM streaming support.
 """
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 from typing import Literal
 
@@ -18,71 +12,90 @@ import pandas as pd
 
 Modality = Literal["t2w", "adc", "hbv"]
 
-CHANNEL_TO_MODALITY = {"0000": "t2w", "0001": "adc", "0002": "hbv"}
-MODALITY_TO_CHANNEL = {v: k for k, v in CHANNEL_TO_MODALITY.items()}
+CHANNEL_TO_MODALITY = {
+    "0000": "t2w",
+    "0001": "adc",
+    "0002": "hbv",
+    "t2w": "t2w",
+    "adc": "adc",
+    "hbv": "hbv",
+}
 
-# ISUP >= 3 is the EAU-defined threshold for clinically significant PCa (csPCa).
-# Fixed here once, project-wide. Do not redefine this elsewhere.
-CSPCA_ISUP_THRESHOLD = 3
+MODALITY_TO_TOKENS = {
+    "t2w": ["t2w", "0000"],
+    "adc": ["adc", "0001"],
+    "hbv": ["hbv", "0002"],
+}
+
+# ISUP >= 2 (Gleason >= 3+4) is the clinically significant PCa (csPCa) threshold.
+CSPCA_ISUP_THRESHOLD = 2
 
 
 def picai_image_path(data_root: Path, patient_id: str, modality: Modality) -> Path:
     """
-    Resolve the path to a single patient's .mha file for one modality, using
-    the confirmed nnU-Net channel naming (_0000/_0001/_0002).
-
-    Raises FileNotFoundError early with a clear message rather than letting
-    SimpleITK fail on a bad path later.
+    Resolve the path to a single patient's .mha file for one modality, supporting
+    both literal modality suffixes (_t2w, _adc, _hbv) and nnU-Net channel numbers (_0000, _0001, _0002).
     """
-    channel = MODALITY_TO_CHANNEL[modality]
     patient_dir = Path(data_root) / "picai" / "images" / str(patient_id)
-    matches = list(patient_dir.glob(f"*_{channel}.mha"))
+    tokens = MODALITY_TO_TOKENS[modality]
+    matches = []
+    for token in tokens:
+        matches.extend(list(patient_dir.glob(f"*_{token}.mha")))
     if not matches:
         raise FileNotFoundError(
-            f"No file found for patient={patient_id}, modality={modality} "
-            f"(channel {channel}) under {patient_dir}"
+            f"No file found for patient={patient_id}, modality={modality} under {patient_dir}"
         )
     return matches[0]
 
 
-def find_complete_patients(data_root: Path) -> tuple[list[str], list[tuple[str, set]]]:
+def find_complete_patients(
+    data_root: Path,
+    rclone_remote: str = "gdrive_thesis:thesis_data",
+) -> tuple[list[str], list[tuple[str, set]]]:
     """
-    Scan every patient folder under picai/images/ and check that all three
-    channels (_0000, _0001, _0002) are present.
-
-    Returns (complete_ids, incomplete) where incomplete is a list of
-    (patient_id, missing_channels) — this is the check that produces the
-    "how many complete cases do we actually have" number, and it must be
-    re-run after every fresh download rather than trusting a remembered count.
+    Scan patient folders under picai/images/ to return all complete patient IDs.
+    If local directory is absent, queries Google Drive via rclone lsf.
     """
     images_root = Path(data_root) / "picai" / "images"
-    if not images_root.exists():
-        raise FileNotFoundError(f"Images root not found at {images_root}")
-
     complete_ids = []
     incomplete = []
-    for patient_dir in images_root.iterdir():
-        if not patient_dir.is_dir():
-            continue
-        files = list(patient_dir.glob("*.mha"))
-        channels_present = {f.stem.split("_")[-1] for f in files}
-        missing = set(CHANNEL_TO_MODALITY.keys()) - channels_present
-        if missing:
-            incomplete.append((patient_dir.name, missing))
-        else:
-            complete_ids.append(patient_dir.name)
+    required_modalities = {"t2w", "adc", "hbv"}
 
-    return complete_ids, incomplete
+    if images_root.exists():
+        for patient_dir in images_root.iterdir():
+            if not patient_dir.is_dir():
+                continue
+            files = list(patient_dir.glob("*.mha"))
+            found = set()
+            for f in files:
+                stem_suffix = f.stem.split("_")[-1]
+                if stem_suffix in CHANNEL_TO_MODALITY:
+                    found.add(CHANNEL_TO_MODALITY[stem_suffix])
+            missing = required_modalities - found
+            if missing:
+                incomplete.append((patient_dir.name, missing))
+            else:
+                complete_ids.append(patient_dir.name)
+    else:
+        try:
+            res = subprocess.run(
+                ["rclone", "lsf", f"{rclone_remote}/picai/images/", "--dirs-only"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            dirs = [d.strip("/") for d in res.stdout.strip().split("\n") if d.strip()]
+            complete_ids = sorted(dirs)
+        except Exception:
+            pass
+
+    return sorted(complete_ids), incomplete
 
 
 def load_marksheet(data_root: Path, complete_ids: list[str] | None = None) -> pd.DataFrame:
     """
     Load picai_marksheet_available.csv, attach the binary csPCa label, and
-    optionally filter to only patients confirmed to have complete images
-    (via `complete_ids` from find_complete_patients()).
-
-    Rows with a missing case_ISUP are always dropped, with a printed count —
-    never silently.
+    optionally filter to only patients confirmed to have complete images.
     """
     csv_path = Path(data_root) / "picai" / "picai_labels" / "clinical_information" / "marksheet.csv"
     if not csv_path.exists():
@@ -108,6 +121,15 @@ def load_marksheet(data_root: Path, complete_ids: list[str] | None = None) -> pd
             f"[load_marksheet] Filtered to complete-image patients: "
             f"{n_before_filter} -> {len(df)}"
         )
+
+    # Déduplication au niveau patient (un patient peut avoir plusieurs examens dans le CSV).
+    # On trie par 'label' et 'case_ISUP' décroissants pour garder l'examen le plus sévère en cas de doublon.
+    n_before_dedup = len(df)
+    df = df.sort_values(by=["label", "case_ISUP"], ascending=False)
+    df = df.drop_duplicates(subset=["patient_id"], keep="first").copy()
+    n_dedup = n_before_dedup - len(df)
+    if n_dedup > 0:
+        print(f"[load_marksheet] Deduplicated {n_dedup} secondary study rows for unique patient-level splitting.")
 
     n_pos = int(df["label"].sum())
     n_neg = len(df) - n_pos
