@@ -46,8 +46,9 @@ def fake_data_root(tmp_path):
     return tmp_path
 
 
-def test_threshold_is_isup_3():
-    assert CSPCA_ISUP_THRESHOLD == 3
+def test_threshold_is_isup_2():
+    assert CSPCA_ISUP_THRESHOLD == 2
+
 
 
 def test_find_complete_patients(fake_data_root):
@@ -55,7 +56,8 @@ def test_find_complete_patients(fake_data_root):
     assert set(complete) == {"A", "B"}
     assert len(incomplete) == 1
     assert incomplete[0][0] == "C"
-    assert incomplete[0][1] == {"0002"}
+    assert incomplete[0][1] == {"hbv"}
+
 
 
 def test_load_marksheet_full(fake_data_root):
@@ -63,9 +65,10 @@ def test_load_marksheet_full(fake_data_root):
     # D has no case_ISUP row at all missing? Actually D not in marksheet -> fine
     # C has case_ISUP missing (None) -> dropped
     assert set(df["patient_id"]) == {"A", "B", "D"}
-    assert df[df["patient_id"] == "A"]["label"].iloc[0] == 0  # ISUP 2
-    assert df[df["patient_id"] == "B"]["label"].iloc[0] == 1  # ISUP 4
+    assert df[df["patient_id"] == "A"]["label"].iloc[0] == 1  # ISUP 2 -> csPCa (threshold >= 2)
+    assert df[df["patient_id"] == "B"]["label"].iloc[0] == 1  # ISUP 4 -> csPCa
     assert df[df["patient_id"] == "D"]["label"].iloc[0] == 1  # ISUP 3 -> csPCa
+
 
 
 def test_load_marksheet_filtered_to_complete(fake_data_root):
