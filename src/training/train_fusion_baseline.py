@@ -29,8 +29,9 @@ from src.config import DATA_ROOT
 from src.data.multimodal_dataset import PicaiMultimodalDataset
 from src.data.picai_paths import find_complete_patients, load_marksheet
 from src.models.simple_cnn3d import SimpleCNN3D
-from src.utils.checkpointing import save_checkpoint
+from src.utils.checkpointing import load_training_state, save_training_state
 from src.utils.config_loader import apply_yaml_to_parser, get_git_hash
+from src.utils.epoch_logger import log_epoch
 from src.utils.fold_guard import assert_no_patient_overlap, log_fold_class_distribution
 from src.utils.results_logger import save_results
 from src.utils.seed import set_seed
@@ -44,6 +45,8 @@ def train_one_fold(
     device: torch.device,
     n_epochs: int,
     class_weight_pos: float,
+    learning_rate: float,
+    weight_decay: float,
     experiment: str = "",
     fold: int = 0,
 ) -> tuple[float, list[float], list[int]]:
@@ -57,24 +60,38 @@ def train_one_fold(
     criterion = nn.CrossEntropyLoss(
         weight=torch.tensor([1.0, class_weight_pos], device=device)
     )
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-5)
+    optimizer = torch.optim.AdamW(
+        model.parameters(), lr=learning_rate, weight_decay=weight_decay
+    )
 
     use_amp = device.type == "cuda"
     scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
 
+    state = load_training_state(model, optimizer, scaler, experiment, fold, device)
+    start_epoch = 0
     best_auroc = 0.0
     best_probs: list[float] = []
     best_labels: list[int] = []
+    if state is not None:
+        start_epoch = int(state["epoch"])
+        best_auroc = float(state["best_metric"])
+        best_probs = state["best_probs"]
+        best_labels = state["best_labels"]
+        print(f"  Reprise fold {fold} à l'epoch {start_epoch + 1}")
 
-    for epoch in range(n_epochs):
+    for epoch in range(start_epoch, n_epochs):
         epoch_start = time.time()
         model.train()
+        total_loss = 0.0
+        batch_count = 0
         for images, labels in train_loader:
             images, labels = images.to(device), labels.to(device)
             optimizer.zero_grad()
             with torch.amp.autocast("cuda", enabled=use_amp):
                 outputs = model(images)
                 loss = criterion(outputs, labels)
+            total_loss += loss.item()
+            batch_count += 1
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -87,12 +104,21 @@ def train_one_fold(
             f"({epoch_time:.1f}s)"
         )
 
-        if auroc > best_auroc:
+        is_best = auroc > best_auroc
+        if is_best:
             best_auroc = auroc
             best_probs = probs
             best_labels = labels_list
-            if experiment:
-                save_checkpoint(model, experiment, fold, auroc)
+        completed_epoch = epoch + 1
+        mean_train_loss = total_loss / max(batch_count, 1)
+        if experiment:
+            log_epoch(
+                experiment, fold, completed_epoch, mean_train_loss, auroc, best_auroc
+            )
+            save_training_state(
+                model, optimizer, scaler, experiment, fold, completed_epoch,
+                best_auroc, best_probs, best_labels, is_best,
+            )
 
     return best_auroc, best_probs, best_labels
 
@@ -103,6 +129,8 @@ def run_fusion_cv(
     batch_size: int = 8,
     n_epochs: int = 30,
     class_weight_pos: float = 2.5,
+    learning_rate: float = 1e-4,
+    weight_decay: float = 1e-5,
     seed: int = 42,
     config_file: str = "argparse",
 ) -> list[float]:
@@ -171,7 +199,7 @@ def run_fusion_cv(
         model = SimpleCNN3D(in_channels=len(modalities), n_classes=2).to(device)
         best_auroc, best_probs, best_labels = train_one_fold(
             model, train_loader, val_loader, device,
-            n_epochs, class_weight_pos,
+            n_epochs, class_weight_pos, learning_rate, weight_decay,
             experiment=experiment_name, fold=fold_num,
         )
         fold_aurocs.append(best_auroc)
@@ -195,8 +223,8 @@ def run_fusion_cv(
         "model": "SimpleCNN3D",
         "in_channels": len(modalities),
         "optimizer": "AdamW",
-        "lr": 1e-4,
-        "weight_decay": 1e-5,
+        "lr": learning_rate,
+        "weight_decay": weight_decay,
         "seed": seed,
         "git_hash": git_hash,
         "config_file": config_file,
@@ -225,6 +253,8 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--n_epochs", type=int, default=30)
     parser.add_argument("--class_weight_pos", type=float, default=2.5)
+    parser.add_argument("--learning_rate", type=float, default=1e-4)
+    parser.add_argument("--weight_decay", type=float, default=1e-5)
     parser.add_argument("--seed", type=int, default=42)
 
     # ── Étape 2-3 : pré-parse + injection YAML comme defaults ────────────────
@@ -246,6 +276,8 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         n_epochs=args.n_epochs,
         class_weight_pos=args.class_weight_pos,
+        learning_rate=args.learning_rate,
+        weight_decay=args.weight_decay,
         seed=args.seed,
         config_file=str(args.config) if args.config else "argparse",
     )
