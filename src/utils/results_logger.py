@@ -16,10 +16,11 @@ from __future__ import annotations
 
 import csv
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 
 # Chemin résolu depuis l'emplacement de ce fichier (indépendant du CWD).
-_RESULTS_DIR = Path(__file__).resolve().parents[2] / "results"
+_RESULTS_DIR = Path(os.environ.get("RUN_OUTPUT_ROOT", "/workspace")) / "results"
 _CSV_PATH = _RESULTS_DIR / "baselines.csv"
 
 _COLUMNS = [

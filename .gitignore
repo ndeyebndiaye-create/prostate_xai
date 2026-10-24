@@ -23,4 +23,14 @@ checkpoints/
 *.pt
 *.pth
 
+# Outputs locaux et données volumineuses
+logs/
+data/
+picai/
+*.h5
+*.hdf5
+*.zip
+*.tar
+*.tar.gz
+
 # Docker volumes are managed by Docker itself, not git

@@ -90,7 +90,7 @@ def get_git_hash() -> str:
     Retourne le hash court du commit Git HEAD courant.
 
     Utilisé pour tracer quel état exact du code a produit un résultat dans
-    results/baselines.csv. Si la commande git échoue (repo non-git ou git
+    /workspace/results/baselines.csv. Si la commande git échoue (repo non-git ou git
     non installé), retourne "unknown" sans planter.
 
     Returns
