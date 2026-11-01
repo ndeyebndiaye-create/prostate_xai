@@ -20,8 +20,8 @@ Where that path actually points on your machine is set once, in `.env`
 
 - [x] Step 1 — Data downloaded to Drive (PI-CAI, via Zenodo), channel naming
       confirmed (`_0000`=T2W, `_0001`=ADC, `_0002`=HBV)
-- [ ] Step 2 — Unimodal baselines: T2W, ADC, HBV separately (in progress)
-- [ ] Step 3 — Simple multimodal fusion baseline (early concatenation)
+- [x] Step 2 — Unimodal baselines: T2W completed (AUROC 0.7172 ± 0.1145), ADC & HBV configs ready
+- [ ] Step 3 — Simple multimodal fusion baseline (early concatenation, `configs/phase3_fusion_simple.yaml`)
 - [ ] Step 4 — Proposed architecture: per-modality encoders + cross-attention
 - [ ] Step 5 — Add clinical variables, compare image-only vs image+clinical
 - [ ] Step 6 — Grad-CAM++, SHAP, uncertainty estimation
@@ -29,36 +29,33 @@ Where that path actually points on your machine is set once, in `.env`
 - [ ] Step 8 — Storage layer (Qdrant + PostgreSQL) and API — only once a
       trained model actually produces embeddings/predictions worth storing
 
-Steps 1-7 are pure ML (`src/`) and do not need Docker at all. Step 8
-(`docker-compose.yml`, `backend/`) is scaffolded now but **not meant to run
-yet** — there is nothing to store until a model exists.
+## Documentation & Guides de Référence
 
-## Setup
+- 📖 **[Guide Complet d'Exécution et Reproduction (Local / Serveur)](docs/GUIDE_COMPLET_EXECUTION_ET_REPRODUCTION.md)** : Instructions détaillées pas à pas pour installer, lancer les visualisations et exécuter les entraînements sur n'importe quel ordinateur ou serveur sans RunPod.
+- 📓 **[Journal de Bord des Expérimentations](docs/JOURNAL_DE_BORD_EXPERIMENTATIONS.md)** : Registre chronologique de la thèse avec protocoles, métriques AUROC obtenues et décisions pour les étapes suivantes.
+- 📊 **[Rapport Visuel EDA & Résultats](docs/EDA_AND_PIPELINE_GUIDE.md)** : Synthèse des distributions statistiques, affichage des coupes IRM axiales et courbes d'entraînement.
+
+## Quick Start (Exécution Locale)
 
 ```bash
-# 1. Create and activate a virtual environment
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
+# 1. Créer et activer l'environnement virtuel
+python3 -m venv .venv
+source .venv/bin/activate        # Windows : .venv\Scripts\activate
 
-# 2. Install ML dependencies
+# 2. Installer les dépendances
+pip install --upgrade pip
 pip install -r requirements.txt
 
-# 3. Configure your local Drive Desktop path
-cp .env.example .env
-# then edit .env and set DATA_ROOT to your actual synced Drive folder, e.g.:
-#   macOS:   /Users/<you>/Google Drive/My Drive/thesis_data
-#   Windows: G:\My Drive\thesis_data
-#   Linux:   /home/<you>/GoogleDrive/thesis_data
-```
-
-```bash
-# 4. Run the test suite (uses synthetic data only, no dependency on DATA_ROOT)
+# 3. Lancer la suite de tests unitaires (42 tests, 100% synthétiques)
 pytest tests/ -v
-```
 
-```bash
-# 5. Run a baseline training (reads DATA_ROOT from .env automatically)
-python -m src.training.train_unimodal_baseline --modality t2w
+# 4. Générer les visualisations graphiques
+python scripts/visualize_eda.py               # Distributions cliniques & corrélations
+python scripts/visualize_mri_slices.py        # Coupes axiales mpMRI & masque expert
+python scripts/visualize_training_results.py  # Graphes de validation AUROC (5-Fold)
+
+# 5. Lancer un entraînement baseline
+python -m src.training.train_unimodal_baseline --config configs/phase1_t2w.yaml
 ```
 
 ## Repository structure

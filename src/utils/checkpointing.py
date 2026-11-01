@@ -22,7 +22,8 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-OUTPUT_ROOT = Path(os.environ.get("RUN_OUTPUT_ROOT", "/workspace"))
+REPO_ROOT = Path(__file__).resolve().parents[2]
+OUTPUT_ROOT = Path(os.environ.get("RUN_OUTPUT_ROOT", str(REPO_ROOT)))
 _CKPT_DIR = OUTPUT_ROOT / "checkpoints"
 
 
