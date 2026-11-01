@@ -9,6 +9,10 @@ scikit-learn>=1.3.0
 python-dotenv>=1.0.0
 pyyaml>=6.0.0          # configs YAML (Option A : coexistence argparse + YAML)
 
+# Visualization & Graphs (EDA & Results)
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
 # Testing
 pytest>=8.0.0
 

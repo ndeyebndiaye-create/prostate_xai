@@ -6,7 +6,8 @@ import csv
 import os
 from pathlib import Path
 
-_LOG_DIR = Path(os.environ.get("RUN_OUTPUT_ROOT", "/workspace")) / "logs"
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_LOG_DIR = Path(os.environ.get("RUN_OUTPUT_ROOT", str(_REPO_ROOT))) / "logs"
 _FIELDS = ["fold", "epoch", "train_loss", "val_auroc", "best_val_auroc"]
 
 
