@@ -61,7 +61,7 @@ def print_comparison_table(df: pd.DataFrame) -> None:
     # Print header.
     sep = "=" * 80
     print(f"\n{sep}")
-    print("  BASELINE COMPARISON — mean AUROC ± std (5-fold stratified CV, ISUP≥3 label)")
+    print("  BASELINE COMPARISON — mean AUROC ± std (5-fold stratified CV, ISUP≥2 label)")
     print(sep)
     print(f"  {'Experiment':<35} {'Modality':<20} {'AUROC (mean ± std)':<22} {'Folds'}")
     print(f"  {'-'*35} {'-'*20} {'-'*22} {'-'*5}")

@@ -75,7 +75,7 @@ python -m src.training.train_unimodal_baseline --config configs/phase1_t2w.yaml
 
 ## Design constraints (still apply, updated for local environment)
 
-- **Patient-level classification only.** Label 0 = ISUP ≤ 2, Label 1 = ISUP ≥ 3.
+- **Patient-level classification only.** Label 0 = ISUP < 2 (bénin / indolent), Label 1 = ISUP ≥ 2 (cliniquement significatif / csPCa, Gleason 3+4+).
 - **PROSTATEx is excluded** entirely — TCIA confirms it is fully absorbed into
   PI-CAI (same 344 patients), so it cannot serve as an external test set.
 - **External validation candidate**: TCIA collection `Prostate-MRI-US-Biopsy`

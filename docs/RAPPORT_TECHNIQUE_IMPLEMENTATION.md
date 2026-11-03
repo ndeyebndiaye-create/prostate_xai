@@ -51,7 +51,7 @@ Deux scripts modulaires ont été implémentés : [`train_unimodal_baseline.py`]
 ### 3.1 Validation Croisée Stratifiée au Niveau Patient (5-Fold CV)
 * Le partitionnement des données utilise `StratifiedKFold` appliqué au niveau des **identifiants patients uniques**, et non des coupes 2D.
 * Cela garantit deux impératifs :
-  1. La conservation exacte du ratio de cas cliniquement significatifs ($\text{ISUP} \ge 3$) au sein de chaque fold.
+  1. La conservation exacte du ratio de cas cliniquement significatifs ($\text{ISUP} \ge 2$) au sein de chaque fold.
   2. L'absence totale de corrélation intra-patient entre les sous-ensembles d'apprentissage et de validation.
 
 ### 3.2 Prise en Compte du Déséquilibre de Classes
