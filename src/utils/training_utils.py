@@ -58,9 +58,17 @@ def evaluate(
     all_labels: list[int] = []
 
     with torch.no_grad():
-        for images, labels in loader:
-            images = images.to(device)
-            probs = torch.softmax(model(images), dim=1)[:, 1].cpu().tolist()
+        for batch in loader:
+            if len(batch) == 3:
+                images, clin, labels = batch
+                images = images.to(device)
+                clin = clin.to(device)
+                logits = model(images, clin)
+            else:
+                images, labels = batch
+                images = images.to(device)
+                logits = model(images)
+            probs = torch.softmax(logits, dim=1)[:, 1].cpu().tolist()
             all_probs.extend(probs)
             all_labels.extend(labels.tolist())
 

@@ -6,7 +6,6 @@
 *.dcm
 *.nii
 *.nii.gz
-*.csv
 !requirements.txt
 
 # Python
@@ -20,11 +19,13 @@ __pycache__/
 # Pour partager un checkpoint précis, uploader manuellement sur Drive et noter
 # le lien dans CHANGELOG.md.
 checkpoints/
+checkpoints
 *.pt
 *.pth
 
 # Outputs locaux et données volumineuses
 logs/
+logs
 data/
 picai/
 *.h5

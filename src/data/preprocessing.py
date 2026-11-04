@@ -91,16 +91,44 @@ def stream_volume_from_drive(
     return arr
 
 
+def resample_to_reference(
+    moving_img: sitk.Image,
+    reference_img: sitk.Image,
+) -> sitk.Image:
+    """
+    Resample `moving_img` (e.g. ADC or HBV) onto the exact physical grid
+    (origin, spacing, direction, size) of `reference_img` (T2W) using linear
+    interpolation, as specified in Chapter 3, Section 3.3.1 of the thesis.
+    """
+    same_size = moving_img.GetSize() == reference_img.GetSize()
+    same_spacing = np.allclose(moving_img.GetSpacing(), reference_img.GetSpacing(), atol=1e-3)
+    same_origin = np.allclose(moving_img.GetOrigin(), reference_img.GetOrigin(), atol=1e-2)
+    same_direction = np.allclose(moving_img.GetDirection(), reference_img.GetDirection(), atol=1e-3)
+    if same_size and same_spacing and same_origin and same_direction:
+        return moving_img
+
+    return sitk.Resample(
+        moving_img,
+        reference_img,
+        sitk.Transform(),
+        sitk.sitkLinear,
+        0.0,
+        moving_img.GetPixelID(),
+    )
+
+
 def load_and_normalize_volume(
     path_or_patient: Path | str,
     target_shape: tuple[int, int, int],
     modality: str | None = None,
     use_rclone_stream: bool = False,
     rclone_remote: str = "gdrive_thesis:thesis_data",
+    reference_path: Path | None = None,
 ) -> np.ndarray:
     """
     Load a .mha volume (from local path or streamed directly from Google Drive in RAM),
-    apply masked z-score normalization, clip to ±3σ, and center-crop/pad to `target_shape`.
+    optionally resample onto `reference_path` (T2W physical space), apply masked z-score
+    normalization, clip to ±3σ, and center-crop/pad to `target_shape`.
     """
     if use_rclone_stream:
         patient_id = str(path_or_patient)
@@ -118,6 +146,9 @@ def load_and_normalize_volume(
                 raise FileNotFoundError(f"File not found locally at {path}")
         else:
             img = sitk.ReadImage(str(path))
+            if reference_path is not None and Path(reference_path).exists() and Path(reference_path) != path:
+                ref_img = sitk.ReadImage(str(reference_path))
+                img = resample_to_reference(img, ref_img)
             arr = sitk.GetArrayFromImage(img).astype(np.float32)
 
     # Masked z-score: exclude background (zero-intensity) pixels

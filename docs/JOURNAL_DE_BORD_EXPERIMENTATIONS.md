@@ -98,6 +98,34 @@
 
 ---
 
+## Fiche 04 — Phases 1 & 3 : Campagne Complète des Baselines C1 à C4 (1 180 Patients Complets, GPU RunPod)
+
+* **Date** : 2026-11-04
+* **Commit Git** : `b8379ec`
+* **Hypothèse Scientifique** : Comparer de manière rigoureusement contrôlée (même découpage 5-fold stratifié `seed=42`, même architecture `SimpleCNN3D`) les trois modalités isolées (`C1: T2W`, `C2: ADC`, `C3: HBV`) et leur fusion précoce par concaténation de canaux (`C4: T2W+ADC+HBV`) sur les 1 180 patients complets de PI-CAI (`ISUP >= 2`).
+* **Commandes d'Exécution** :
+  ```bash
+  python3 -m src.training.train_unimodal_baseline --config configs/phase1_t2w.yaml
+  python3 -m src.training.train_unimodal_baseline --config configs/phase1_adc.yaml
+  python3 -m src.training.train_unimodal_baseline --config configs/phase1_hbv.yaml
+  python3 -m src.training.train_fusion_baseline --config configs/phase3_fusion_simple.yaml
+  ```
+* **Résultats Quantitatifs (`results/baselines.csv`)** :
+
+  | Config | Expérience | Modalités | Fold 1 | Fold 2 | Fold 3 | Fold 4 | Fold 5 | **Moyenne ± Écart-type** |
+  | :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+  | **C1** | `phase1_t2w_only` | `t2w` | `0.7162` | `0.6893` | `0.6154` | `0.7347` | `0.7031` | **`0.6917 ± 0.0410`** |
+  | **C4** | `fusion_simple` | `t2w+adc+hbv` | `0.6622` | `0.6720` | `0.6128` | `0.7266` | `0.6803` | **`0.6708 ± 0.0364`** |
+  | **C2** | `phase1_adc_only` | `adc` | `0.5922` | `0.6172` | `0.6347` | `0.6659` | `0.6924` | **`0.6405 ± 0.0353`** |
+  | **C3** | `phase1_hbv_only` | `hbv` | `0.6373` | `0.5979` | `0.6160` | `0.6418` | `0.5904` | **`0.6167 ± 0.0205`** |
+
+* **Conclusion & Décisions pour la suite** :
+  1. **Confirmation de Bertelli et al. (2022) (Section 2.4.1 du mémoire)** : En unimodal, le T2W (`0.6917`) surpasse nettement l'ADC (`0.6405`) et le HBV (`0.6167`).
+  2. **Confirmation des limites de la concaténation précoce (Sections 2.4.3, 2.5.1 et 4.4.1 du mémoire)** : La concaténation naïve des 3 canaux (`0.6708`) reste inférieure au T2W seul (`0.6917`). L'inspection physique des volumes via `SimpleITK` révèle en outre que les volumes bruts ADC/HBV (`1.75 mm/px`) et T2W (`0.28 mm/px`) n'étaient pas rééchantillonnés dans le même espace physique avant le crop, ce qui brouille la correspondance spatiale voxel-à-voxel lors d'une concaténation précoce.
+  3. **Décision** : Implémenter le recalage physique `SimpleITK` d'ADC et HBV vers l'espace T2W (Section 3.3.1), la fenêtre `19 × 128 × 128` (Section 3.3.3), les encodeurs `SegResNet` 3D par modalité, la branche clinique MLP et la fusion par attention croisée bidirectionnelle (Chapitre 4, configurations C5 à C7).
+
+---
+
 ## Modèle de Fiche pour les Futures Expérimentations
 
 Pour chaque nouvelle expérience à venir, dupliquez ce template :

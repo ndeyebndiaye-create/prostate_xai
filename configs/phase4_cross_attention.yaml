@@ -1,0 +1,36 @@
+# Phase 4 — Encodeurs 3D dédiés (SegResNet MONAI) + Attention Croisée & Gating (Image seule)
+#
+# Usage :
+#   python3 -m src.training.train_cross_attention --config configs/phase4_cross_attention.yaml
+#
+# Isole l'apport architectural de SegResNet 3D + Recalage physique SimpleITK +
+# Attention croisée inter-modalités par rapport à la concaténation précoce SimpleCNN3D (C4).
+
+experiment_name: phase4_segresnet_cross_attention
+modalities:
+  - t2w
+  - adc
+  - hbv
+n_folds: 5
+batch_size: 8
+n_epochs: 30
+class_weight_pos: 2.5
+learning_rate: 0.0001
+weight_decay: 0.00001
+init_filters: 16
+encoder_dim: 256
+fusion_dim: 128
+num_heads: 4
+num_layers: 2
+ffn_dim: 256
+dropout: 0.15
+shared_weights: false
+use_clinical: false
+fusion_mode: cross_attention
+use_gating: true
+align_to_t2w: true
+target_shape:
+  - 96
+  - 96
+  - 16
+seed: 42
