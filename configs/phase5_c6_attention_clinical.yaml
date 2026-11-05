@@ -1,0 +1,34 @@
+# Phase 5 (Configuration C6 — Tableau 3.1 du mémoire)
+# Encodeurs SegResNet 3D + Variables Cliniques (MLP) + Self-Attention
+#
+# Usage :
+#   python3 -m src.training.train_cross_attention --config configs/phase5_c6_attention_clinical.yaml
+
+experiment_name: phase5_c6_attention_clinical
+modalities:
+  - t2w
+  - adc
+  - hbv
+n_folds: 5
+batch_size: 8
+n_epochs: 30
+class_weight_pos: 2.5
+learning_rate: 0.0001
+weight_decay: 0.00001
+init_filters: 16
+encoder_dim: 256
+fusion_dim: 128
+num_heads: 4
+num_layers: 2
+ffn_dim: 256
+dropout: 0.15
+shared_weights: false
+use_clinical: true
+fusion_mode: attention
+use_gating: true
+align_to_t2w: true
+target_shape:
+  - 96
+  - 96
+  - 16
+seed: 42

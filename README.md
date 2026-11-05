@@ -20,10 +20,10 @@ Where that path actually points on your machine is set once, in `.env`
 
 - [x] Step 1 — Data downloaded to Drive (PI-CAI, via Zenodo), channel naming
       confirmed (`_0000`=T2W, `_0001`=ADC, `_0002`=HBV)
-- [x] Step 2 — Unimodal baselines: T2W completed (AUROC 0.7172 ± 0.1145), ADC & HBV configs ready
-- [ ] Step 3 — Simple multimodal fusion baseline (early concatenation, `configs/phase3_fusion_simple.yaml`)
-- [ ] Step 4 — Proposed architecture: per-modality encoders + cross-attention
-- [ ] Step 5 — Add clinical variables, compare image-only vs image+clinical
+- [x] Step 2 — Unimodal baselines completed (5-fold CV, 1,180 patients): T2W (`0.6917 ± 0.0410`), ADC (`0.6405 ± 0.0353`), HBV (`0.6167 ± 0.0205`)
+- [x] Step 3 — Simple multimodal fusion baseline completed (early concatenation, `configs/phase3_fusion_simple.yaml`: AUROC `0.6708 ± 0.0364`)
+- [x] Step 4 — Proposed architecture implemented: per-modality 3D `SegResNet` encoders + `SimpleITK` physical-space alignment + cross-attention & modality gating (`configs/phase4_cross_attention.yaml`)
+- [x] Step 5 — Clinical variables branch (`ClinicalEncoderMLP` on `[age, log(PSA), PSAD, prostate_volume]`) + bidirectional cross-attention configs C5, C6, C7 ready (`configs/phase5_c*.yaml`)
 - [ ] Step 6 — Grad-CAM++, SHAP, uncertainty estimation
 - [ ] Step 7 — Robustness / domain-shift experiments
 - [ ] Step 8 — Storage layer (Qdrant + PostgreSQL) and API — only once a
@@ -31,6 +31,7 @@ Where that path actually points on your machine is set once, in `.env`
 
 ## Documentation & Guides de Référence
 
+- 🗺️ **[Feuille de Route, Concordance Rédaction-Code & Progression](docs/FEUILLE_DE_ROUTE_ET_PROGRESSION.md)** : Suivi détaillé de toutes les étapes accomplies, concordance chapitre par chapitre avec le manuscrit de thèse (Chapitres 1 à 5) et plan d'action complet pour la suite (sur **PI-CAI** exclusivement).
 - 📖 **[Guide Complet d'Exécution et Reproduction (Local / Serveur)](docs/GUIDE_COMPLET_EXECUTION_ET_REPRODUCTION.md)** : Instructions détaillées pas à pas pour installer, lancer les visualisations et exécuter les entraînements sur n'importe quel ordinateur ou serveur sans RunPod.
 - 📓 **[Journal de Bord des Expérimentations](docs/JOURNAL_DE_BORD_EXPERIMENTATIONS.md)** : Registre chronologique de la thèse avec protocoles, métriques AUROC obtenues et décisions pour les étapes suivantes.
 - 📊 **[Rapport Visuel EDA & Résultats](docs/EDA_AND_PIPELINE_GUIDE.md)** : Synthèse des distributions statistiques, affichage des coupes IRM axiales et courbes d'entraînement.
@@ -46,7 +47,7 @@ source .venv/bin/activate        # Windows : .venv\Scripts\activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# 3. Lancer la suite de tests unitaires (42 tests, 100% synthétiques)
+# 3. Lancer la suite de tests unitaires (48 tests, 100% synthétiques)
 pytest tests/ -v
 
 # 4. Générer les visualisations graphiques
