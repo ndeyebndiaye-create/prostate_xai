@@ -180,6 +180,27 @@ Format : `## [Phase] — Date — Résultat`
 
 ---
 
+## [Phase 5 — Configurations C6 & C7] — 2026-11-08 — Entraînements 5-Fold CV Complets de C1 à C7
+
+**Contexte** : Exécution sur les 1 180 patients complets de PI-CAI (`seed=42`, 30 époques × 5 plis) des deux dernières architectures multimodales :
+- **Configuration `C6` (`phase5_c6_attention_clinical`)** : 3 encodeurs `SegResNet` 3D + `ClinicalEncoderMLP` + Transformer Self-Attention.
+- **Configuration `C7` (`phase5_c7_cross_attention_clinical`)** : Architecture finale proposée du mémoire (3 encodeurs `SegResNet` 3D + `ClinicalEncoderMLP` + Attention Croisée Bidirectionnelle Image $\leftrightarrow$ Clinique + Modality Gating).
+
+**Résultats (`results/baselines.csv` & `results/clinical_and_calibration_metrics.csv`)** :
+- **Configuration `C6`** :
+  - **AUROC = `0.7778 ± 0.0512`** (Folds : `0.7669`, `0.8140`, `0.6856`, `0.8327`, `0.7895`)
+  - Métriques cliniques `@sens90` : Sensibilité = `0.913`, Spécificité = `0.414`, F1 = `0.543`, `ECE = 0.1420`, `Brier = 0.1882`.
+- **Configuration `C7` (Modèle Proposé)** :
+  - **AUROC = `0.7748 ± 0.0492`** (Folds : `0.7729`, `0.8060`, `0.6869`, `0.8330`, `0.7751`)
+  - Métriques cliniques `@sens90` : Sensibilité = **`0.919`**, Spécificité = **`0.420`**, F1 = **`0.546`**, `ECE = 0.1696`, `Brier = 0.1993`.
+
+**Synthèse complète de C1 à C7** :
+Toutes les architectures du Tableau 3.1 du mémoire sont entraînées et évaluées sur la cohorte unifiée de 1 180 patients. Les figures comparatives (`training_all_models_comparison.png`, `training_clinical_and_calibration_tradeoff.png`, `training_epoch_learning_curves.png`) sont générées dans `docs/figures/`.
+
+**Prochaine étape** : Lancer `scripts/run_xai_and_uncertainty.py` (Étape 7 : Grad-CAM++ 3D, SHAP clinique, MC Dropout) et `scripts/run_robustness_and_loco.py` (Étape 8 : Dégradations africaines 1.5T et LOCO).
+
+---
+
 ## Template pour la prochaine entrée
 
 ```
