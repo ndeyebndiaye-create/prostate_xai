@@ -29,7 +29,7 @@ checkpoints
 *.pth
 
 # Outputs locaux et données volumineuses (les logs/*.csv légers sont versionnés)
-data/
+/data/
 picai/
 *.h5
 *.hdf5

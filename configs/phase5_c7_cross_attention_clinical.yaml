@@ -5,7 +5,7 @@
 # Usage :
 #   python3 -m src.training.train_cross_attention --config configs/phase5_c7_cross_attention_clinical.yaml
 
-experiment_name: phase5_c7_proposed_cross_attention
+experiment_name: phase5_c7_cross_attention_clinical
 modalities:
   - t2w
   - adc
