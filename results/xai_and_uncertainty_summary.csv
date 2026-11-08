@@ -1,0 +1,2 @@
+experiment,fold,n_xai_positive_cases,mean_occlusion_drop_joint,mc_auroc_T25_abst0,mc_auroc_T25_abst10,mc_auroc_T25_abst20
+phase5_c7_cross_attention_clinical,1,5,0.000707,0.769054,0.760073,0.767626

@@ -202,7 +202,9 @@ def run_xai_pipeline(
 
     if ckpt_path.exists():
         state = torch.load(ckpt_path, map_location=device, weights_only=False)
-        model.load_state_dict(state["model"])
+        # Support both checkpoint key formats
+        model_key = "model_state_dict" if "model_state_dict" in state else "model"
+        model.load_state_dict(state[model_key])
         print(f"[XAI] Checkpoint chargé : {ckpt_path}")
     else:
         print(f"[XAI] Attention : {ckpt_path} non trouvé, exécution avec les poids courants.")
@@ -210,7 +212,7 @@ def run_xai_pipeline(
     # 1. Grad-CAM++ 3D & Occlusion Fidelity + SHAP on top positive cases
     occlusion_rows: list[dict[str, float]] = []
     shap_rows: list[dict[str, float]] = []
-    plotted_gradcam = False
+    n_plotted = 0
 
     n_done = 0
     for idx in range(len(val_ds)):
@@ -234,11 +236,15 @@ def run_xai_pipeline(
         drops = compute_occlusion_fidelity_drop(model, vol_b, heatmaps, clin=clin_b)
         occlusion_rows.append(drops)
 
-        if not plotted_gradcam:
+        if n_plotted < 3:
             fig_path = Path("docs/xai_and_robustness_visuals") / f"xai_gradcam3d_{experiment}_patient{pid}.png"
             _plot_gradcam_per_modality(pid, vol_t.numpy(), heatmaps, modalities, fig_path)
+            # Also save main figure in docs/figures/
+            if n_plotted == 0:
+                main_fig_path = Path("docs/figures/xai_gradcam3d_per_modality.png")
+                _plot_gradcam_per_modality(pid, vol_t.numpy(), heatmaps, modalities, main_fig_path)
             print(f"[XAI] Figure Grad-CAM++ 3D sauvegardée -> {fig_path}")
-            plotted_gradcam = True
+            n_plotted += 1
 
         if use_clinical and clin_b is not None:
             shap_vals = compute_exact_clinical_shap_on_logit(model, vol_b, clin_b)
