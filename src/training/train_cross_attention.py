@@ -100,7 +100,8 @@ def train_one_fold(
         total_loss = 0.0
         batch_count = 0
 
-        for batch in train_loader:
+        n_batches = len(train_loader)
+        for batch_idx, batch in enumerate(train_loader, start=1):
             if len(batch) == 3:
                 images, clin, labels = batch
                 images = images.to(device)
@@ -135,6 +136,13 @@ def train_one_fold(
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
+
+            if epoch == start_epoch and (batch_idx == 1 or batch_idx % 20 == 0 or batch_idx == n_batches):
+                print(
+                    f"    [epoch {epoch + 1} | batch {batch_idx}/{n_batches}] "
+                    f"loss={loss.item():.4f} ({time.time() - epoch_start:.1f}s)",
+                    flush=True,
+                )
 
         auroc, probs, labels_list = evaluate(model, val_loader, device)
         epoch_time = time.time() - epoch_start
@@ -267,10 +275,20 @@ def run_cross_attention_cv(
         )
 
         train_loader = DataLoader(
-            train_ds, batch_size=batch_size, shuffle=True, num_workers=4
+            train_ds,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=4,
+            persistent_workers=True,
+            pin_memory=(device.type == "cuda"),
         )
         val_loader = DataLoader(
-            val_ds, batch_size=batch_size, shuffle=False, num_workers=4
+            val_ds,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=4,
+            persistent_workers=True,
+            pin_memory=(device.type == "cuda"),
         )
 
         model = MultimodalCrossAttentionNet(

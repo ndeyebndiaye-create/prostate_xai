@@ -86,6 +86,8 @@ class SegResNetEncoder3D(nn.Module):
     def forward_features(self, x: torch.Tensor) -> torch.Tensor:
         """Return the deepest 3D convolutional feature map `[B, C_deep, d, h, w]`."""
         latent, _ = self.backbone.encode(x)
+        if latent.requires_grad:
+            latent.retain_grad()
         self.last_feature_map = latent
         return latent
 

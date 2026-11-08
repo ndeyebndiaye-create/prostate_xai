@@ -1,19 +1,24 @@
 # Secrets / machine-specific config — never commit
 .env
+rclone.conf
 
 # Never commit data
 *.mha
+*.npy
 *.dcm
 *.nii
 *.nii.gz
 !requirements.txt
 
-# Python
+# Python & virtual environments
 __pycache__/
 *.pyc
 .pytest_cache/
 *.egg-info/
 .venv/
+mon_env/
+venv/
+env/
 
 # Checkpoints (potentiellement plusieurs centaines de MB — ne pas versionner)
 # Pour partager un checkpoint précis, uploader manuellement sur Drive et noter
@@ -23,9 +28,7 @@ checkpoints
 *.pt
 *.pth
 
-# Outputs locaux et données volumineuses
-logs/
-logs
+# Outputs locaux et données volumineuses (les logs/*.csv légers sont versionnés)
 data/
 picai/
 *.h5
