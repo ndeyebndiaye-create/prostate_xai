@@ -44,13 +44,22 @@ def fit_transform_clinical_features(
     def _raw_table(pids: list[str]) -> pd.DataFrame:
         sub = df.reindex(pids)
         age = pd.to_numeric(sub.get("patient_age"), errors="coerce")
+        # Out-of-range physiological ages (<18 or >110) treated as missing
+        age = age.where((age >= 18.0) & (age <= 110.0), np.nan)
+
         psa = pd.to_numeric(sub.get("psa"), errors="coerce")
+        psa = psa.where(psa > 0.0, np.nan)
+
         vol = pd.to_numeric(sub.get("prostate_volume"), errors="coerce")
+        vol = vol.where(vol > 0.0, np.nan)
+
         psad = pd.to_numeric(sub.get("psad"), errors="coerce")
+        psad = psad.where(psad > 0.0, np.nan)
         # Derive PSAD = PSA / volume when missing and both PSA and volume are valid
-        derived_psad = psa / vol.replace(0, np.nan)
+        derived_psad = psa / vol
         psad = psad.fillna(derived_psad)
-        log_psa = np.log(np.clip(psa, a_min=0.0, a_max=None) + eps)
+
+        log_psa = np.log(psa + eps)
         return pd.DataFrame(
             {
                 "patient_age": age,
@@ -64,10 +73,10 @@ def fit_transform_clinical_features(
     train_df = _raw_table(train_ids)
     val_df = _raw_table(val_ids)
 
-    # Fit imputation (train means) and standardization (train mean & std) on train ONLY
-    train_means = train_df.mean(axis=0).fillna(0.0)
-    train_filled = train_df.fillna(train_means)
-    val_filled = val_df.fillna(train_means)
+    # Fit imputation (train median — robust to right-skewed PSA/PSAD) and z-score on train ONLY
+    train_medians = train_df.median(axis=0).fillna(0.0)
+    train_filled = train_df.fillna(train_medians)
+    val_filled = val_df.fillna(train_medians)
 
     mean_vec = train_filled.mean(axis=0).to_numpy(dtype=np.float32)
     std_vec = train_filled.std(axis=0, ddof=0).to_numpy(dtype=np.float32)

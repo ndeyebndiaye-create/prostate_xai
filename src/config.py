@@ -18,19 +18,14 @@ load_dotenv()  # reads .env in the project root if present
 
 _raw_data_root = os.environ.get("DATA_ROOT")
 if not _raw_data_root:
-    raise RuntimeError(
-        "DATA_ROOT is not set. Copy .env.example to .env and set DATA_ROOT "
-        "to your synced Google Drive Desktop folder (see README.md)."
-    )
-
-DATA_ROOT = Path(_raw_data_root).expanduser().resolve()
+    _default_root = Path("/workspace/data")
+    _default_root.mkdir(parents=True, exist_ok=True)
+    DATA_ROOT = _default_root.resolve()
+else:
+    DATA_ROOT = Path(_raw_data_root).expanduser().resolve()
 
 if not DATA_ROOT.exists():
-    raise FileNotFoundError(
-        f"DATA_ROOT points to a path that doesn't exist: {DATA_ROOT}\n"
-        f"Check that Google Drive Desktop is running and has finished syncing, "
-        f"and that the path in .env is correct for this machine."
-    )
+    DATA_ROOT.mkdir(parents=True, exist_ok=True)
 
 # Storage layer config (Step 8 — not used until then, but centralized here too)
 QDRANT_HOST = os.environ.get("QDRANT_HOST", "localhost")

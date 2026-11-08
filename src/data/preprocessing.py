@@ -10,7 +10,9 @@ via rclone in RAM without saving full datasets to local storage.
 
 from __future__ import annotations
 
+import functools
 import io
+import os
 import subprocess
 import tempfile
 import time
@@ -18,6 +20,8 @@ from pathlib import Path
 
 import numpy as np
 import SimpleITK as sitk
+
+sitk.ProcessObject.SetGlobalDefaultNumberOfThreads(1)
 
 MODALITY_TO_TOKENS = {
     "t2w": ["t2w", "0000"],
@@ -117,6 +121,48 @@ def resample_to_reference(
     )
 
 
+@functools.lru_cache(maxsize=4096)
+def _cached_load_and_normalize_local(
+    path_str: str,
+    target_shape: tuple[int, int, int],
+    ref_path_str: str | None = None,
+) -> np.ndarray:
+    """
+    Cached local loader: reads .mha from disk, optionally resamples onto T2W
+    physical grid, normalizes (masked z-score + ±3σ clip), and center-crops/pads.
+    Disk cache (`.npy`) + RAM cache so every volume is resampled ONLY ONCE across
+    all epochs, folds, and experiments (Phase 4, C5, C6, C7)!
+    """
+    align_tag = "alignedT2W" if (ref_path_str and ref_path_str != path_str) else "raw"
+    shape_tag = f"{target_shape[0]}x{target_shape[1]}x{target_shape[2]}"
+    cache_npy = Path(f"{path_str}.{align_tag}_{shape_tag}.npy")
+
+    if cache_npy.exists():
+        try:
+            return np.load(cache_npy)
+        except Exception:
+            pass
+
+    img = sitk.ReadImage(path_str)
+    if ref_path_str is not None and ref_path_str != path_str and os.path.exists(ref_path_str):
+        ref_img = sitk.ReadImage(ref_path_str)
+        img = resample_to_reference(img, ref_img)
+    arr = sitk.GetArrayFromImage(img).astype(np.float32)
+
+    mask = arr != 0
+    if mask.sum() > 0:
+        mean, std = arr[mask].mean(), arr[mask].std()
+        arr = (arr - mean) / (std + 1e-8)
+    arr = np.clip(arr, -3.0, 3.0)
+    arr = center_crop_or_pad(arr, target_shape).astype(np.float32)
+
+    try:
+        np.save(cache_npy, arr)
+    except Exception:
+        pass
+    return arr
+
+
 def load_and_normalize_volume(
     path_or_patient: Path | str,
     target_shape: tuple[int, int, int],
@@ -135,31 +181,28 @@ def load_and_normalize_volume(
         if modality is None:
             raise ValueError("modality is required when use_rclone_stream=True")
         arr = stream_volume_from_drive(patient_id, modality, rclone_remote=rclone_remote)
-    else:
-        path = Path(path_or_patient)
-        if not path.exists():
-            # Fallback to streaming if local path is not present
-            if modality is not None:
-                patient_id = path.parent.name
-                arr = stream_volume_from_drive(patient_id, modality, rclone_remote=rclone_remote)
-            else:
-                raise FileNotFoundError(f"File not found locally at {path}")
-        else:
-            img = sitk.ReadImage(str(path))
-            if reference_path is not None and Path(reference_path).exists() and Path(reference_path) != path:
-                ref_img = sitk.ReadImage(str(reference_path))
-                img = resample_to_reference(img, ref_img)
-            arr = sitk.GetArrayFromImage(img).astype(np.float32)
+        mask = arr != 0
+        if mask.sum() > 0:
+            mean, std = arr[mask].mean(), arr[mask].std()
+            arr = (arr - mean) / (std + 1e-8)
+        arr = np.clip(arr, -3.0, 3.0)
+        return center_crop_or_pad(arr, target_shape)
 
-    # Masked z-score: exclude background (zero-intensity) pixels
-    mask = arr != 0
-    if mask.sum() > 0:
-        mean, std = arr[mask].mean(), arr[mask].std()
-        arr = (arr - mean) / (std + 1e-8)
-    arr = np.clip(arr, -3.0, 3.0)
+    path = Path(path_or_patient)
+    if not path.exists():
+        if modality is not None:
+            patient_id = path.parent.name
+            arr = stream_volume_from_drive(patient_id, modality, rclone_remote=rclone_remote)
+            mask = arr != 0
+            if mask.sum() > 0:
+                mean, std = arr[mask].mean(), arr[mask].std()
+                arr = (arr - mean) / (std + 1e-8)
+            arr = np.clip(arr, -3.0, 3.0)
+            return center_crop_or_pad(arr, target_shape)
+        raise FileNotFoundError(f"File not found locally at {path}")
 
-    arr = center_crop_or_pad(arr, target_shape)
-    return arr
+    ref_str = str(reference_path) if reference_path is not None else None
+    return _cached_load_and_normalize_local(str(path), tuple(target_shape), ref_str).copy()
 
 
 def center_crop_or_pad(arr: np.ndarray, target_shape: tuple[int, int, int]) -> np.ndarray:
