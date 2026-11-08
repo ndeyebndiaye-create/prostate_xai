@@ -162,6 +162,24 @@ Format : `## [Phase] — Date — Résultat`
 
 ---
 
+## [Étapes 5 & 6 — Baselines Cliniques, Phase 4 & Config C5] — 2026-11-08 — Résultats 5-Fold CV & Calibration
+
+**Contexte** : Exécution sur les 1 180 patients complets de PI-CAI (`seed=42`, 5 folds stratifiés) des baselines cliniques seules (`clinical_logreg`, `clinical_gboost`), de la Phase 4 (Image seule : 3 encodeurs `SegResNet` 3D + recalage `SimpleITK` + Cross-Attention + Gating) et de la Configuration `C5` (`phase5_c5_concat_clinical` : `SegResNet` 3D + Clinique + Concaténation tardive), ainsi que l'implémentation complète des modules des Étapes 6, 7 (XAI : `Grad-CAM++ 3D`, `SHAP`, `MC Dropout`) et 8 (`degradation.py`).
+
+**Résultats (`results/baselines.csv` & `results/clinical_and_calibration_metrics.csv`)** :
+- **Baselines Cliniques Seules (`[patient_age, log(PSA), PSAD, prostate_volume]`)** :
+  - `clinical_logreg` : **AUROC = `0.7620 ± 0.0483`** (`Sens@90 = 0.907`, `Spec@90 = 0.375`, `F1 = 0.521`, `ECE = 0.1789`, `Brier = 0.1996`)
+  - `clinical_gboost` : **AUROC = `0.7439 ± 0.0465`** (`Sens@90 = 0.797`, `Spec@90 = 0.554`, `F1 = 0.546`, `ECE = 0.0574`, `Brier = 0.1751`)
+- **Phase 4 (`phase4_segresnet_cross_attention`, Image seule)** :
+  - **AUROC = `0.6567 ± 0.0348`** (Folds : `0.6685`, `0.6456`, `0.6194`, `0.7183`, `0.6319`)
+- **Configuration `C5` (`phase5_c5_concat_clinical`, `t2w+adc+hbv+clin`)** :
+  - **AUROC = `0.7738 ± 0.0456`** (Folds : `0.7648`, `0.8098`, `0.6939`, `0.8253`, `0.7751`)
+  - Métriques cliniques `@sens90` : **`Sensibilité = 0.913`**, **`Spécificité = 0.452`** (**+7,7 points de spécificité** par rapport à `clinical_logreg` seul tout en maintenant >91 % de sensibilité !), `F1 = 0.559`, `ECE = 0.1641`, `Brier = 0.1964`.
+
+**Prochaine étape (Demain)** : Lancer `C6` (`configs/phase5_c6_attention_clinical.yaml`) et `C7` (`configs/phase5_c7_cross_attention_clinical.yaml`), puis exécuter `scripts/run_xai_and_uncertainty.py` et `scripts/run_robustness_and_loco.py`.
+
+---
+
 ## Template pour la prochaine entrée
 
 ```

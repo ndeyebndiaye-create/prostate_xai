@@ -31,11 +31,14 @@ def evaluate_saved_checkpoints(
     checkpoints_root: Path | None = None,
     output_csv: Path | None = None,
 ) -> list[dict]:
-    out_root = Path(os.environ.get("RUN_OUTPUT_ROOT", "/workspace"))
+    repo_root = Path(__file__).resolve().parents[1]
+    out_root = Path(os.environ.get("RUN_OUTPUT_ROOT", str(repo_root)))
     if checkpoints_root is None:
         checkpoints_root = out_root / "checkpoints"
+        if not checkpoints_root.exists():
+            checkpoints_root = repo_root / "checkpoints"
     if output_csv is None:
-        output_csv = out_root / "results" / "clinical_and_calibration_metrics.csv"
+        output_csv = repo_root / "results" / "clinical_and_calibration_metrics.csv"
 
     if not checkpoints_root.exists():
         print(f"[evaluate_calibration] Aucun dossier checkpoints trouvé sous {checkpoints_root}")

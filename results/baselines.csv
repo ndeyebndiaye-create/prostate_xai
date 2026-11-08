@@ -53,3 +53,9 @@ timestamp,experiment,modality,fold,auroc,mean_auroc,std_auroc,n_folds,git_hash,s
 2026-11-08T01:36:31+00:00,phase4_segresnet_cross_attention,t2w+adc+hbv,4,0.718273,0.656716,0.034821,5,fd8c4d9,42,configs/phase4_cross_attention.yaml
 2026-11-08T01:36:31+00:00,phase4_segresnet_cross_attention,t2w+adc+hbv,5,0.6319,0.656716,0.034821,5,fd8c4d9,42,configs/phase4_cross_attention.yaml
 2026-11-08T01:36:31+00:00,phase4_segresnet_cross_attention,t2w+adc+hbv,summary,0.656716,0.656716,0.034821,5,fd8c4d9,42,configs/phase4_cross_attention.yaml
+2026-11-08T02:47:46+00:00,phase5_c5_concat_clinical,t2w+adc+hbv+clin,1,0.764815,0.773788,0.045638,5,fd8c4d9,42,configs/phase5_c5_concat_clinical.yaml
+2026-11-08T02:47:46+00:00,phase5_c5_concat_clinical,t2w+adc+hbv+clin,2,0.809768,0.773788,0.045638,5,fd8c4d9,42,configs/phase5_c5_concat_clinical.yaml
+2026-11-08T02:47:46+00:00,phase5_c5_concat_clinical,t2w+adc+hbv+clin,3,0.693897,0.773788,0.045638,5,fd8c4d9,42,configs/phase5_c5_concat_clinical.yaml
+2026-11-08T02:47:46+00:00,phase5_c5_concat_clinical,t2w+adc+hbv+clin,4,0.825311,0.773788,0.045638,5,fd8c4d9,42,configs/phase5_c5_concat_clinical.yaml
+2026-11-08T02:47:46+00:00,phase5_c5_concat_clinical,t2w+adc+hbv+clin,5,0.775148,0.773788,0.045638,5,fd8c4d9,42,configs/phase5_c5_concat_clinical.yaml
+2026-11-08T02:47:46+00:00,phase5_c5_concat_clinical,t2w+adc+hbv+clin,summary,0.773788,0.773788,0.045638,5,fd8c4d9,42,configs/phase5_c5_concat_clinical.yaml

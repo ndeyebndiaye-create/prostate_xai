@@ -235,7 +235,7 @@ def run_xai_pipeline(
         occlusion_rows.append(drops)
 
         if not plotted_gradcam:
-            fig_path = Path("docs/figures") / f"xai_gradcam3d_{experiment}_patient{pid}.png"
+            fig_path = Path("docs/xai_and_robustness_visuals") / f"xai_gradcam3d_{experiment}_patient{pid}.png"
             _plot_gradcam_per_modality(pid, vol_t.numpy(), heatmaps, modalities, fig_path)
             print(f"[XAI] Figure Grad-CAM++ 3D sauvegardée -> {fig_path}")
             plotted_gradcam = True
@@ -247,7 +247,7 @@ def run_xai_pipeline(
         n_done += 1
 
     if shap_rows:
-        shap_fig = Path("docs/figures") / f"xai_clinical_shap_{experiment}.png"
+        shap_fig = Path("docs/xai_and_robustness_visuals") / f"xai_clinical_shap_{experiment}.png"
         _plot_shap_summary(shap_rows, shap_fig)
         print(f"[XAI] Figure SHAP clinique sauvegardée -> {shap_fig}")
 
@@ -275,7 +275,7 @@ def run_xai_pipeline(
             f"AUROC(20% abst.)={curve[4]['auroc_retained']:.4f}"
         )
 
-    abst_fig = Path("docs/figures") / f"xai_mc_dropout_abstention_{experiment}.png"
+    abst_fig = Path("docs/xai_and_robustness_visuals") / f"xai_mc_dropout_abstention_{experiment}.png"
     _plot_abstention_curve(curves_by_T, abst_fig)
     print(f"[XAI] Courbe d'abstention MC Dropout sauvegardée -> {abst_fig}")
 
