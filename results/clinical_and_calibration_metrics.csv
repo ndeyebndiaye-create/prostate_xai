@@ -131,3 +131,15 @@ phase5_c7_cross_attention_clinical,from_checkpoint,youden,3,0.68692,0.721106,0.5
 phase5_c7_cross_attention_clinical,from_checkpoint,youden,4,0.832995,0.579761,0.776119,0.798817,0.604651,0.9,0.679739,0.185442,0.192126,42,5ebbf63
 phase5_c7_cross_attention_clinical,from_checkpoint,youden,5,0.775148,0.408017,0.776119,0.650888,0.468468,0.88,0.58427,0.187168,0.146351,42,5ebbf63
 phase5_c7_cross_attention_clinical,from_checkpoint,youden,summary_mean,0.774777,0.52477,0.725373,0.739645,0.529246,0.873436,0.608738,0.199301,0.169593,42,5ebbf63
+phase5_c7_cross_attention_clinical_hires,from_checkpoint,sens90,1,0.767729,0.368389,0.910448,0.431953,0.388535,0.924051,0.544643,0.244602,0.259768,42,321d5ab
+phase5_c7_cross_attention_clinical_hires,from_checkpoint,sens90,2,0.801908,0.235858,0.910448,0.473373,0.406667,0.930233,0.562212,0.161254,0.091835,42,321d5ab
+phase5_c7_cross_attention_clinical_hires,from_checkpoint,sens90,3,0.68065,0.094796,0.910448,0.242604,0.322751,0.87234,0.476562,0.211671,0.158881,42,321d5ab
+phase5_c7_cross_attention_clinical_hires,from_checkpoint,sens90,4,0.828667,0.314803,0.910448,0.52071,0.429577,0.93617,0.583732,0.164083,0.128107,42,321d5ab
+phase5_c7_cross_attention_clinical_hires,from_checkpoint,sens90,5,0.770291,0.348192,0.910448,0.426036,0.386076,0.923077,0.542222,0.20469,0.197107,42,321d5ab
+phase5_c7_cross_attention_clinical_hires,from_checkpoint,sens90,summary_mean,0.769849,0.272408,0.910448,0.418935,0.386721,0.917174,0.541874,0.19726,0.16714,42,321d5ab
+phase5_c7_cross_attention_clinical_hires,from_checkpoint,youden,1,0.767729,0.640508,0.776119,0.704142,0.509804,0.88806,0.615385,0.244602,0.259768,42,321d5ab
+phase5_c7_cross_attention_clinical_hires,from_checkpoint,youden,2,0.801908,0.452295,0.686567,0.828402,0.613333,0.869565,0.647887,0.161254,0.091835,42,321d5ab
+phase5_c7_cross_attention_clinical_hires,from_checkpoint,youden,3,0.68065,0.523738,0.61194,0.721893,0.465909,0.824324,0.529032,0.211671,0.158881,42,321d5ab
+phase5_c7_cross_attention_clinical_hires,from_checkpoint,youden,4,0.828667,0.420496,0.865672,0.721893,0.552381,0.931298,0.674419,0.164083,0.128107,42,321d5ab
+phase5_c7_cross_attention_clinical_hires,from_checkpoint,youden,5,0.770291,0.593934,0.641791,0.792899,0.551282,0.848101,0.593103,0.20469,0.197107,42,321d5ab
+phase5_c7_cross_attention_clinical_hires,from_checkpoint,youden,summary_mean,0.769849,0.526194,0.716418,0.753846,0.538542,0.87227,0.611965,0.19726,0.16714,42,321d5ab

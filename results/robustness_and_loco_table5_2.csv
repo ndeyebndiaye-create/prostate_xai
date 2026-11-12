@@ -1,0 +1,7 @@
+experiment,fold,condition,auroc_clean,auroc_condition,delta_stress
+phase5_c7_cross_attention_clinical_hires,1,degradation_low,0.767729,0.767464,0.000265
+phase5_c7_cross_attention_clinical_hires,1,degradation_medium,0.767729,0.767464,0.000265
+phase5_c7_cross_attention_clinical_hires,1,degradation_high,0.767729,0.767553,0.000177
+phase5_c7_cross_attention_clinical_hires,1,missing_t2w,0.767729,0.767994,-0.000265
+phase5_c7_cross_attention_clinical_hires,1,missing_adc,0.767729,0.768083,-0.000353
+phase5_c7_cross_attention_clinical_hires,1,missing_hbv,0.767729,0.76667,0.00106

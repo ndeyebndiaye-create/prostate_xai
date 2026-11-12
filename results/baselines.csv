@@ -71,3 +71,9 @@ timestamp,experiment,modality,fold,auroc,mean_auroc,std_auroc,n_folds,git_hash,s
 2026-11-08T15:11:39+00:00,phase5_c7_cross_attention_clinical,t2w+adc+hbv+clin,4,0.832995,0.774777,0.049163,5,5ebbf63,42,configs/phase5_c7_cross_attention_clinical.yaml
 2026-11-08T15:11:39+00:00,phase5_c7_cross_attention_clinical,t2w+adc+hbv+clin,5,0.775148,0.774777,0.049163,5,5ebbf63,42,configs/phase5_c7_cross_attention_clinical.yaml
 2026-11-08T15:11:39+00:00,phase5_c7_cross_attention_clinical,t2w+adc+hbv+clin,summary,0.774777,0.774777,0.049163,5,5ebbf63,42,configs/phase5_c7_cross_attention_clinical.yaml
+2026-11-12T16:47:58+00:00,phase5_c7_cross_attention_clinical_hires,t2w+adc+hbv+clin,1,0.767729,0.769849,0.049897,5,321d5ab,42,configs/phase5_c7_cross_attention_clinical_hires.yaml
+2026-11-12T16:47:58+00:00,phase5_c7_cross_attention_clinical_hires,t2w+adc+hbv+clin,2,0.801908,0.769849,0.049897,5,321d5ab,42,configs/phase5_c7_cross_attention_clinical_hires.yaml
+2026-11-12T16:47:58+00:00,phase5_c7_cross_attention_clinical_hires,t2w+adc+hbv+clin,3,0.68065,0.769849,0.049897,5,321d5ab,42,configs/phase5_c7_cross_attention_clinical_hires.yaml
+2026-11-12T16:47:58+00:00,phase5_c7_cross_attention_clinical_hires,t2w+adc+hbv+clin,4,0.828667,0.769849,0.049897,5,321d5ab,42,configs/phase5_c7_cross_attention_clinical_hires.yaml
+2026-11-12T16:47:58+00:00,phase5_c7_cross_attention_clinical_hires,t2w+adc+hbv+clin,5,0.770291,0.769849,0.049897,5,321d5ab,42,configs/phase5_c7_cross_attention_clinical_hires.yaml
+2026-11-12T16:47:58+00:00,phase5_c7_cross_attention_clinical_hires,t2w+adc+hbv+clin,summary,0.769849,0.769849,0.049897,5,321d5ab,42,configs/phase5_c7_cross_attention_clinical_hires.yaml

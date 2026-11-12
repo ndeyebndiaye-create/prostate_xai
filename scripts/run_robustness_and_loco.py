@@ -150,7 +150,8 @@ def run_stress_tests(
 
     if ckpt_path.exists():
         state = torch.load(ckpt_path, map_location=device, weights_only=False)
-        model.load_state_dict(state["model"])
+        model_key = "model_state_dict" if "model_state_dict" in state else "model"
+        model.load_state_dict(state[model_key])
         print(f"[Robustness] Checkpoint chargé : {ckpt_path}")
 
     auroc_clean = evaluate_under_degradation(model, val_ds, device, severity="clean")
