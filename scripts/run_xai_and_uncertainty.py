@@ -71,9 +71,17 @@ def _plot_gradcam_per_modality(
 
         ax_bot = axes[1, idx]
         ax_bot.imshow(img_slice, cmap="gray")
-        im = ax_bot.imshow(cam_slice, cmap="jet", alpha=0.45, vmin=0.0, vmax=1.0)
+        # Mask out values below 0.20 so background MRI anatomy is clearly visible
+        cam_masked = np.ma.masked_where(cam_slice < 0.20, cam_slice)
+        im = ax_bot.imshow(cam_masked, cmap="jet", alpha=0.60, vmin=0.0, vmax=1.0)
+        # Add contour lines for clear focal tumor boundary
+        if (cam_slice >= 0.50).any():
+            try:
+                ax_bot.contour(cam_slice, levels=[0.50, 0.75], colors=["#ffff00", "#ff0000"], linewidths=[1.0, 1.5], alpha=0.85)
+            except Exception:
+                pass
         py, px = np.unravel_index(int(np.argmax(cam_slice)), cam_slice.shape)
-        ax_bot.scatter([px], [py], c="white", edgecolors="black", s=70, marker="*", label="Pic d'attention")
+        ax_bot.scatter([px], [py], c="white", edgecolors="black", s=80, marker="*", label="Pic d'attention")
         ax_bot.set_title(f"Heatmap_{mod.upper()} (Grad-CAM++ 3D)", fontweight="bold")
         ax_bot.axis("off")
         plt.colorbar(im, ax=ax_bot, fraction=0.046, pad=0.04)
@@ -153,10 +161,18 @@ def run_xai_pipeline(
     shared_weights: bool = False,
     max_xai_samples: int = 20,
     seed: int = 42,
+    target_shape: tuple[int, int, int] | None = None,
 ) -> None:
     set_seed(seed)
     if modalities is None:
         modalities = ["t2w", "adc", "hbv"]
+
+    if target_shape is None:
+        if "hires" in experiment.lower():
+            target_shape = (128, 128, 20)
+        else:
+            target_shape = (96, 96, 16)
+    print(f"[XAI] Résolution spatiale d'entrée (target_shape) : {target_shape}")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     out_root = Path(os.environ.get("RUN_OUTPUT_ROOT", "/root/prostate_xai"))
@@ -188,6 +204,7 @@ def run_xai_pipeline(
         val_ids,
         marksheet,
         modalities=modalities,
+        target_shape=target_shape,
         align_to_t2w=True,
         clinical_features=val_clin,
     )
@@ -232,18 +249,21 @@ def run_xai_pipeline(
         vol_b = vol_t.unsqueeze(0).to(device)
         pid = val_ids[idx]
 
-        heatmaps = compute_per_modality_gradcam_pp_3d(model, vol_b, clin=clin_b)
+        heatmaps = compute_per_modality_gradcam_pp_3d(
+            model, vol_b, clin=clin_b, percentile_threshold=70.0
+        )
         drops = compute_occlusion_fidelity_drop(model, vol_b, heatmaps, clin=clin_b)
         occlusion_rows.append(drops)
 
         if n_plotted < 3:
             fig_path = Path("docs/xai_and_robustness_visuals") / f"xai_gradcam3d_{experiment}_patient{pid}.png"
+            fig_path_fig = Path("docs/figures") / f"xai_gradcam3d_{experiment}_patient{pid}.png"
             _plot_gradcam_per_modality(pid, vol_t.numpy(), heatmaps, modalities, fig_path)
-            # Also save main figure in docs/figures/
+            _plot_gradcam_per_modality(pid, vol_t.numpy(), heatmaps, modalities, fig_path_fig)
             if n_plotted == 0:
                 main_fig_path = Path("docs/figures/xai_gradcam3d_per_modality.png")
                 _plot_gradcam_per_modality(pid, vol_t.numpy(), heatmaps, modalities, main_fig_path)
-            print(f"[XAI] Figure Grad-CAM++ 3D sauvegardée -> {fig_path}")
+            print(f"[XAI] Figure Grad-CAM++ 3D sauvegardée -> {fig_path} et {fig_path_fig}")
             n_plotted += 1
 
         if use_clinical and clin_b is not None:
@@ -253,9 +273,13 @@ def run_xai_pipeline(
         n_done += 1
 
     if shap_rows:
-        shap_fig = Path("docs/xai_and_robustness_visuals") / f"xai_clinical_shap_{experiment}.png"
-        _plot_shap_summary(shap_rows, shap_fig)
-        print(f"[XAI] Figure SHAP clinique sauvegardée -> {shap_fig}")
+        shap_fig_vis = Path("docs/xai_and_robustness_visuals") / f"xai_clinical_shap_{experiment}.png"
+        shap_fig_fig = Path("docs/figures") / f"xai_clinical_shap_{experiment}.png"
+        shap_fig_main = Path("docs/figures/xai_clinical_shap_summary.png")
+        _plot_shap_summary(shap_rows, shap_fig_vis)
+        _plot_shap_summary(shap_rows, shap_fig_fig)
+        _plot_shap_summary(shap_rows, shap_fig_main)
+        print(f"[XAI] Figure SHAP clinique sauvegardée -> {shap_fig_vis} et {shap_fig_fig}")
 
     # 2. MC Dropout (T = 10, 25, 50) & Selective Abstention across validation fold
     curves_by_T: dict[int, list[dict[str, float]]] = {}
@@ -281,9 +305,13 @@ def run_xai_pipeline(
             f"AUROC(20% abst.)={curve[4]['auroc_retained']:.4f}"
         )
 
-    abst_fig = Path("docs/xai_and_robustness_visuals") / f"xai_mc_dropout_abstention_{experiment}.png"
-    _plot_abstention_curve(curves_by_T, abst_fig)
-    print(f"[XAI] Courbe d'abstention MC Dropout sauvegardée -> {abst_fig}")
+    abst_fig_vis = Path("docs/xai_and_robustness_visuals") / f"xai_mc_dropout_abstention_{experiment}.png"
+    abst_fig_fig = Path("docs/figures") / f"xai_mc_dropout_abstention_{experiment}.png"
+    abst_fig_main = Path("docs/figures/xai_mc_dropout_abstention.png")
+    _plot_abstention_curve(curves_by_T, abst_fig_vis)
+    _plot_abstention_curve(curves_by_T, abst_fig_fig)
+    _plot_abstention_curve(curves_by_T, abst_fig_main)
+    print(f"[XAI] Courbe d'abstention MC Dropout sauvegardée -> {abst_fig_vis} et {abst_fig_fig}")
 
     # Save quantitative summary CSV (Table 5.3)
     csv_out = out_root / "results" / "xai_and_uncertainty_summary.csv"
@@ -326,7 +354,16 @@ if __name__ == "__main__":
     parser.add_argument("--shared_weights", action="store_true", default=False)
     parser.add_argument("--max_xai_samples", type=int, default=20)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--target_shape",
+        nargs=3,
+        type=int,
+        default=None,
+        help="Target 3D shape (H, W, D), e.g. 128 128 20. Auto-inferred if omitted.",
+    )
     args = parser.parse_args()
+
+    target_shape = tuple(args.target_shape) if args.target_shape is not None else None
 
     run_xai_pipeline(
         experiment=args.experiment,
@@ -336,4 +373,5 @@ if __name__ == "__main__":
         shared_weights=args.shared_weights,
         max_xai_samples=args.max_xai_samples,
         seed=args.seed,
+        target_shape=target_shape,
     )

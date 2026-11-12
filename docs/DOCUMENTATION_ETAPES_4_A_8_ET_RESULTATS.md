@@ -136,15 +136,28 @@ python3 -m src.training.train_cross_attention --config configs/phase5_c7_cross_a
   2. **Raffinement global (`LightweightTransformerBlock`, Section 4.4.4)** : Auto-attention à 4 têtes avec token `[CLS]` et encodages de type de modalité.
   3. **Pondération adaptative (`ModalityGating`, Section 4.4.5)** : Calcul des poids de confiance $\alpha_m \in [0, 1]$ ($\sum_m \alpha_m = 1$) pour chaque modalité avant la tête de classification finale.
 
-### 4.3 Résultats Déjà Acquis — Configuration `C5` (`phase5_c5_concat_clinical`)
+### 4.3 Résultats Acquis — Configurations `C5`, `C6` et `C7 Baseline`
 
 | Configuration | Modalités | Fold 1 | Fold 2 | Fold 3 | Fold 4 | Fold 5 | **AUROC (Moy ± Écart-type)** | Gain vs `C1` (`T2W`) | Gain vs `clinical_logreg` |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **`phase5_c5_concat_clinical` (`C5`)** | `t2w+adc+hbv+clin` | `0.7648` | `0.8098` | `0.6939` | `0.8253` | `0.7751` | **`0.7738 ± 0.0456`** | **`+8.21 pts`** (`0.6917`) | **`+1.18 pts`** (`0.7620`) |
+| **`phase5_c6_attention_clinical` (`C6`)** | `t2w+adc+hbv+clin` | `0.7669` | `0.8140` | `0.6856` | `0.8327` | `0.7895` | **`0.7778 ± 0.0512`** | **`+8.61 pts`** (`0.6917`) | **`+1.58 pts`** (`0.7620`) |
+| **`phase5_c7_cross_attention_clinical` (`C7 Baseline`)** | `t2w+adc+hbv+clin` | `0.7729` | `0.8060` | `0.6869` | `0.8330` | `0.7751` | **`0.7748 ± 0.0492`** | **`+8.31 pts`** (`0.6917`) | **`+1.28 pts`** (`0.7620`) |
 
-**Interprétation scientifique majeure de `C5` (`AUROC = 0.7738 ± 0.0456`)** :
-1. **`C5` surpasse à la fois toutes les baselines d'imagerie seule (`C1 = 0.6917`, `C4 = 0.6708`, `Phase 4 = 0.6567`) ET toutes les baselines cliniques seules (`clinical_logreg = 0.7620`, `clinical_gboost = 0.7439`)** sur chacun des 5 folds (`0.7648` vs `0.7568` sur Fold 1, `0.8098` vs `0.8052` sur Fold 2, `0.6939` vs `0.6776` sur Fold 3, `0.8253` vs `0.8130` sur Fold 4, `0.7751` vs `0.7573` sur Fold 5).
-2. C'est la **première démonstration expérimentale directe** dans le mémoire de la complémentarité **IRM 3D recalée (`SegResNet`) + Biomarqueurs cliniques (`MLP`)** : l'imagerie 3D apporte l'information morphologique et de restriction de diffusion qui manquait au `PSAD`/`PSA`, faisant passer l'AUROC moyenne à **`0.7738`** (avec un pic à **`0.8253`** sur le Fold 4).
+### 4.4 Raffinement C7 Haute Résolution (`phase5_c7_cross_attention_clinical_hires` : $128 \times 128 \times 20$)
+À la suite du diagnostic géométrique démontrant que le crop initial à $96 \times 96$ ($4{,}8 \times 4{,}8\text{ cm}$) tronquait la partie antérieure de la prostate et incluait le rectum postérieur, une configuration haute résolution avec recentrage antérieur a été mise en place :
+- **Dimension spatiale cible** : $128 \times 128 \times 20$ voxels ($6{,}4 \times 6{,}4\text{ cm}$ axial et $6{,}0\text{ cm}$ craniocaudal).
+- **Recentrage antérieur paramétrable** dans `center_crop_or_pad()` (`src/data/preprocessing.py`).
+- **Orchestration complète en une commande** via `scripts/run_hires_pipeline_and_xai.sh`.
+
+#### Mise à jour synchronisée des figures dans `docs/figures/` et `docs/xai_and_robustness_visuals/` :
+L'exécution de `bash scripts/run_hires_pipeline_and_xai.sh` déclenche automatiquement la mise à jour des figures suivantes :
+1. `docs/figures/training_all_models_comparison.png` : Intègre la nouvelle barre C7 Hi-Res en cyan foncé aux côtés de C1–C7.
+2. `docs/figures/training_clinical_and_calibration_tradeoff.png` : Met à jour les compromis Sensibilité@90%, Spécificité, ECE et Brier.
+3. `docs/figures/training_epoch_learning_curves.png` : Ajoute la courbe de convergence epoch par epoch de C7 Hi-Res.
+4. `docs/figures/xai_gradcam3d_per_modality.png` : Affiche la prostate complète délimitée, sans voile diffus, avec masquage anatomique transparent ($<0.20$) et isolignes de contours (50 % jaune, 75 % rouge).
+5. `docs/figures/xai_clinical_shap_summary.png` : Importance relative exacte des 4 variables cliniques.
+6. `docs/figures/xai_mc_dropout_abstention.png` : Courbe de gain d'AUROC par abstention sélective.
 
 ---
 

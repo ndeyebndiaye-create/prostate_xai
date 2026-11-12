@@ -82,13 +82,18 @@ class SegResNetEncoder3D(nn.Module):
 
         # Populated on every forward pass for Grad-CAM++ (Section 4.6.1)
         self.last_feature_map: torch.Tensor | None = None
+        self.intermediate_feature_maps: list[torch.Tensor] = []
 
     def forward_features(self, x: torch.Tensor) -> torch.Tensor:
         """Return the deepest 3D convolutional feature map `[B, C_deep, d, h, w]`."""
-        latent, _ = self.backbone.encode(x)
+        latent, down = self.backbone.encode(x)
         if latent.requires_grad:
             latent.retain_grad()
         self.last_feature_map = latent
+        for feat in down:
+            if feat.requires_grad:
+                feat.retain_grad()
+        self.intermediate_feature_maps = down
         return latent
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

@@ -205,25 +205,34 @@ def load_and_normalize_volume(
     return _cached_load_and_normalize_local(str(path), tuple(target_shape), ref_str).copy()
 
 
-def center_crop_or_pad(arr: np.ndarray, target_shape: tuple[int, int, int]) -> np.ndarray:
+def center_crop_or_pad(
+    arr: np.ndarray,
+    target_shape: tuple[int, int, int],
+    anterior_shift_px: int = 0,
+) -> np.ndarray:
     """
-    Deterministically center-crop (if array exceeds target) or zero-pad
+    Deterministically crop (if array exceeds target) or zero-pad
     (if array is smaller) a 3-D volume to exactly `target_shape`.
+    Optionally includes an anterior shift (`anterior_shift_px`) to center on the
+    prostate gland rather than the posterior rectal wall in pelvic axial slices.
     """
     target_h, target_w, target_d = target_shape
     d, h, w = arr.shape
 
-    def _bounds(size: int, target: int) -> tuple[slice, int, int]:
+    def _bounds(size: int, target: int, offset: int = 0) -> tuple[slice, int, int]:
         if size >= target:
-            start = (size - target) // 2
+            start = max(0, (size - target) // 2 - offset)
+            if start + target > size:
+                start = size - target
             return slice(start, start + target), 0, 0
         pad_before = (target - size) // 2
         pad_after = target - size - pad_before
         return slice(0, size), pad_before, pad_after
 
-    d_slice, d_pb, d_pa = _bounds(d, target_d)
-    h_slice, h_pb, h_pa = _bounds(h, target_h)
-    w_slice, w_pb, w_pa = _bounds(w, target_w)
+    d_slice, d_pb, d_pa = _bounds(d, target_d, offset=0)
+    # Apply anterior shift on H (Y-axis: anterior-posterior) to capture the prostate
+    h_slice, h_pb, h_pa = _bounds(h, target_h, offset=anterior_shift_px)
+    w_slice, w_pb, w_pa = _bounds(w, target_w, offset=0)
 
     cropped = arr[d_slice, h_slice, w_slice]
     return np.pad(cropped, ((d_pb, d_pa), (h_pb, h_pa), (w_pb, w_pa)))

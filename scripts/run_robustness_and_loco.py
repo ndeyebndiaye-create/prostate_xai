@@ -98,10 +98,15 @@ def run_stress_tests(
     fusion_mode: str = "cross_attention",
     shared_weights: bool = False,
     seed: int = 42,
+    target_shape: tuple[int, int, int] | None = None,
 ) -> list[dict]:
     set_seed(seed)
     modalities = ["t2w", "adc", "hbv"]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if target_shape is None:
+        target_shape = (128, 128, 20) if "hires" in experiment.lower() else (96, 96, 16)
+    print(f"[Robustness] Résolution spatiale d'entrée (target_shape) : {target_shape}")
 
     out_root = Path(os.environ.get("RUN_OUTPUT_ROOT", "/root/prostate_xai"))
     ckpt_path = out_root / "checkpoints" / experiment / f"fold_{fold}" / "best.pt"
@@ -131,6 +136,7 @@ def run_stress_tests(
         val_ids,
         marksheet,
         modalities=modalities,
+        target_shape=target_shape,
         align_to_t2w=True,
         clinical_features=val_clin,
     )
@@ -218,7 +224,16 @@ if __name__ == "__main__":
     )
     parser.add_argument("--shared_weights", action="store_true", default=False)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--target_shape",
+        nargs=3,
+        type=int,
+        default=None,
+        help="Target 3D shape (H, W, D). Auto-inferred if omitted.",
+    )
     args = parser.parse_args()
+
+    target_shape = tuple(args.target_shape) if args.target_shape is not None else None
 
     run_stress_tests(
         experiment=args.experiment,
@@ -227,4 +242,5 @@ if __name__ == "__main__":
         fusion_mode=args.fusion_mode,
         shared_weights=args.shared_weights,
         seed=args.seed,
+        target_shape=target_shape,
     )

@@ -26,6 +26,8 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = REPO_ROOT / "docs" / "figures"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+VIS_DIR = REPO_ROOT / "docs" / "xai_and_robustness_visuals"
+VIS_DIR.mkdir(parents=True, exist_ok=True)
 
 BASELINES_CSV = REPO_ROOT / "results" / "baselines.csv"
 CLINICAL_CSV = REPO_ROOT / "results" / "clinical_and_calibration_metrics.csv"
@@ -41,7 +43,8 @@ PRETTY_NAMES = {
     "clinical_logreg": "Clinique seule — Régression Logistique (Guerbet)",
     "phase5_c5_concat_clinical": "C5 — SegResNet 3D + Clinique (Concaténation)",
     "phase5_c6_attention_clinical": "C6 — SegResNet 3D + Clinique (Self-Attention)",
-    "phase5_c7_cross_attention_clinical": "C7 — Modèle Proposé (Cross-Attn + Gating)",
+    "phase5_c7_cross_attention_clinical": "C7 Baseline (Crop 96x96x16)",
+    "phase5_c7_cross_attention_clinical_hires": "C7 Hi-Res (128x128x20, FOV étendu)",
 }
 
 
@@ -76,7 +79,9 @@ def plot_all_models_comparison() -> None:
 
     palette = []
     for e in exps:
-        if "clinical" in e and "phase5" not in e:
+        if "hires" in e:
+            palette.append("#008080")  # Dark Teal for C7 Hi-Res
+        elif "clinical" in e and "phase5" not in e:
             palette.append("#d95f02")  # Orange for clinical-only
         elif "phase5" in e or "phase4" in e:
             palette.append("#1b9e77")  # Green/Teal for SegResNet / Cross-Attention
@@ -165,8 +170,10 @@ def plot_all_models_comparison() -> None:
     plt.tight_layout()
     out1 = OUTPUT_DIR / "training_all_models_comparison.png"
     plt.savefig(out1, dpi=300, bbox_inches="tight")
+    plt.savefig(VIS_DIR / "training_all_models_comparison.png", dpi=300, bbox_inches="tight")
     # Also update legacy filename for backward compatibility
     plt.savefig(OUTPUT_DIR / "training_baseline_results.png", dpi=300, bbox_inches="tight")
+    plt.savefig(VIS_DIR / "training_baseline_results.png", dpi=300, bbox_inches="tight")
     plt.close()
     print(f"[visualize] Sauvegardé -> {out1}")
 
@@ -259,6 +266,7 @@ def plot_clinical_and_calibration_tradeoff() -> None:
     plt.tight_layout()
     out2 = OUTPUT_DIR / "training_clinical_and_calibration_tradeoff.png"
     plt.savefig(out2, dpi=300, bbox_inches="tight")
+    plt.savefig(VIS_DIR / "training_clinical_and_calibration_tradeoff.png", dpi=300, bbox_inches="tight")
     plt.close()
     print(f"[visualize] Sauvegardé -> {out2}")
 
@@ -321,6 +329,7 @@ def plot_epoch_learning_curves() -> None:
     plt.tight_layout()
     out3 = OUTPUT_DIR / "training_epoch_learning_curves.png"
     plt.savefig(out3, dpi=300, bbox_inches="tight")
+    plt.savefig(VIS_DIR / "training_epoch_learning_curves.png", dpi=300, bbox_inches="tight")
     plt.close()
     print(f"[visualize] Sauvegardé -> {out3}")
 

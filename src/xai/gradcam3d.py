@@ -24,6 +24,7 @@ def compute_per_modality_gradcam_pp_3d(
     clin: torch.Tensor | None = None,
     target_class: int = 1,
     upsample_to_input: bool = True,
+    percentile_threshold: float = 0.0,
     eps: float = 1e-8,
 ) -> dict[str, np.ndarray]:
     """
@@ -50,6 +51,11 @@ def compute_per_modality_gradcam_pp_3d(
     upsample_to_input : bool
         If True, trilinearly upsamples each 3D heatmap to `(D, H, W)` and min-max
         normalizes to `[0, 1]`.
+    percentile_threshold : float
+        Optional percentile threshold (e.g. 70.0) to filter out background diffuse
+        noise and sharpen focal tumor localization. Default is 0.0 (no thresholding).
+    eps : float
+        Numerical epsilon to avoid division by zero.
 
     Returns
     -------
@@ -101,6 +107,14 @@ def compute_per_modality_gradcam_pp_3d(
             cam_np = (cam_np - c_min) / (c_max - c_min)
         else:
             cam_np = np.zeros_like(cam_np)
+
+        if percentile_threshold > 0:
+            p_val = float(np.percentile(cam_np, percentile_threshold))
+            cam_np = np.where(cam_np >= p_val, cam_np, 0.0)
+            c_min2, c_max2 = float(cam_np.min()), float(cam_np.max())
+            if c_max2 - c_min2 > eps:
+                cam_np = (cam_np - c_min2) / (c_max2 - c_min2)
+
         heatmaps[modality] = cam_np
 
     if was_training:
